@@ -7,38 +7,39 @@ const User = require("../app/models/User");
 const { genUsername } = require("../utils/genUsername");
 const Transaction = require("../app/models/Transaction");
 const { getCurrentCoin } = require("../utils/getCurrentCoin");
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
 
-const secretKey = 'danieldev';
+const secretKey = "danieldev";
 
-
-const expiresIn = '24h';
+const expiresIn = "24h";
 
 function createToken(payload) {
   console.log(jwt.sign(payload, secretKey, { expiresIn }));
   return jwt.sign(payload, secretKey, { expiresIn });
 }
 
-// Middleware 
+// Middleware
 function checkToken(req, res, next) {
-  const token = req.headers['authorization'];
+  const token = req.headers["authorization"];
   if (token) {
-      jwt.verify(token, secretKey, (err, decoded) => {
-          if (err) {
-              return res.status(401).json({ success: false, message: 'Invalid token.' });
-          } else {
-              req.decoded = decoded;
-              next();
-          }
-      });
+    jwt.verify(token, secretKey, (err, decoded) => {
+      if (err) {
+        return res
+          .status(401)
+          .json({ success: false, message: "Invalid token." });
+      } else {
+        req.decoded = decoded;
+        next();
+      }
+    });
   } else {
-      return res.status(401).json({ success: false, message: 'Tokens not provided.' });
+    return res
+      .status(401)
+      .json({ success: false, message: "Tokens not provided." });
   }
 }
 
-
-
-router.get("/users", checkToken, async (req, res) => {
+router.get("/users", async (req, res) => {
   try {
     const allUser = await getUser();
     return res.json(allUser);
@@ -51,7 +52,7 @@ router.get("/users", checkToken, async (req, res) => {
   }
 });
 
-router.post("/sell/:coin", checkToken, async (req, res) => {
+router.post("/sell/:coin", async (req, res) => {
   try {
     const wallet = await getWallet(req.body.transUsername);
     const total = Number(wallet) + Number(req.body.transAmount);
@@ -91,7 +92,7 @@ router.post("/sell/:coin", checkToken, async (req, res) => {
   }
 });
 
-router.post("/buy/:coin", checkToken, async (req, res) => {
+router.post("/buy/:coin", async (req, res) => {
   try {
     const wallet = await getWallet(req.body.transUsername);
     const amount = Number(wallet);
@@ -138,7 +139,7 @@ router.post("/buy/:coin", checkToken, async (req, res) => {
   }
 });
 
-router.post("/user/create", checkToken, async (req, res) => {
+router.post("/user/create", async (req, res) => {
   try {
     const exists = await User.findOne({ email: req.body.email });
 
@@ -184,12 +185,12 @@ router.get("/home/settings", (req, res) => {
   });
 });
 
-router.get("/sell/list", checkToken, async (req, res) => {
+router.get("/sell/list", async (req, res) => {
   const listSell = await getListSell();
   return res.json(listSell);
 });
 
-router.get("/buy/list", checkToken, async (req, res) => {
+router.get("/buy/list", async (req, res) => {
   const listBuy = await getListBuy();
   return res.json(listBuy);
 });
