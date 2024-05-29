@@ -38,7 +38,33 @@ function checkToken(req, res, next) {
       .json({ success: false, message: "Tokens not provided." });
   }
 }
-
+router.post("/user/add-coin/:username", async (req, res) => {
+  try {
+    const coin = req.body.coin;
+    const addCoin = User.findOneAndUpdate(
+      { username: req.params.username },
+      { wallet: coin },
+      { new: true }
+    );
+    if (addCoin) {
+      return res.json({
+        success: true,
+        message: "Add coin successfully!",
+      });
+    } else {
+      return res.json({
+        success: false,
+        message: "Add coin failed!",
+      });
+    }
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred during adding coin.",
+    });
+  }
+});
 router.get("/users", async (req, res) => {
   try {
     const allUser = await getUser();
@@ -51,7 +77,32 @@ router.get("/users", async (req, res) => {
     });
   }
 });
-
+router.post("/user/bank/update/:username", async (req, res) => {
+  try {
+    const { bankName, bankNumber } = req.body;
+    const user = await User.findOneAndUpdate(
+      { username: req.params.username },
+      { bankName, bankNumber }
+    );
+    if (user) {
+      return res.json({
+        success: true,
+        message: "Update bank successfully!",
+      });
+    } else {
+      return res.json({
+        success: false,
+        message: "Update bank failed!",
+      });
+    }
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred during updating bank.",
+    });
+  }
+});
 router.post("/sell/:coin", async (req, res) => {
   try {
     const wallet = await getWallet(req.body.transUsername);

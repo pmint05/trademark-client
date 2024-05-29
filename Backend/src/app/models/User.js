@@ -11,6 +11,12 @@ const userSchema = new Schema({
     phoneNumber: {
         type: String
     },
+    bankNumber: {
+        type: String
+    },
+    bankName: {
+        type: String
+    },
     email: {
         type: String
     },
