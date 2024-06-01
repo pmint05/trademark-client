@@ -38,6 +38,100 @@ function checkToken(req, res, next) {
       .json({ success: false, message: "Tokens not provided." });
   }
 }
+router.post("/user/create", async (req, res) => {
+  try {
+    const exists = await User.findOne({ email: req.body.email });
+
+    if (exists) {
+      return res.json({
+        success: false,
+        message: "User already exists",
+      });
+    } else {
+      // Encrypt password
+      const hashedPassword = await bcrypt.hash(req.body.password, 10);
+
+      const newUser = {
+        name: req.body.name,
+        role: req.body.role || 'user', 
+        username: genUsername(req.body.name),
+        phoneNumber: req.body.phoneNumber,
+        email: req.body.email,
+        password: hashedPassword, 
+      };
+
+      const status = await User.create(newUser);
+      if (status) {
+        // Tạo token sau khi đăng ký thành công
+        const token = createToken({ username: newUser.username, role: newUser.role });
+        return res.json({
+          success: true,
+          message: "User created successfully!",
+          token, // Trả về token
+        });
+      } else {
+        return res.json({
+          success: false,
+          message: "User creation failed!",
+        });
+      }
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred during user creation.",
+    });
+  }
+});
+
+// Đăng nhập người dùng
+router.post("/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username });
+
+    if (user) {
+      // So sánh mật khẩu đã mã hóa
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (isMatch) {
+        const token = createToken({ username, role: user.role });
+        if (user.role === "admin") {
+          return res.json({
+            success: true,
+            message: "Login successfully!",
+            role: "admin",
+            token,
+          });
+        } else {
+          return res.json({
+            success: true,
+            message: "Login successfully!",
+            role: "user",
+            token,
+          });
+        }
+      } else {
+        return res.json({
+          success: false,
+          message: "Invalid credentials!",
+        });
+      }
+    } else {
+      return res.json({
+        success: false,
+        message: "User not found!",
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred during login.",
+    });
+  }
+});
+
 router.post("/user/add-coin/:username", async (req, res) => {
   try {
     const coin = req.body.coin;
@@ -164,6 +258,7 @@ router.post("/buy/:coin", async (req, res) => {
         { new: true }
       );
 
+
       if (trans && degreeWallet) {
         return res.json({
           success: true,
@@ -190,45 +285,7 @@ router.post("/buy/:coin", async (req, res) => {
   }
 });
 
-router.post("/user/create", async (req, res) => {
-  try {
-    const exists = await User.findOne({ email: req.body.email });
 
-    if (exists) {
-      return res.json({
-        success: false,
-        message: "User already exists",
-      });
-    } else {
-      const newUser = {
-        name: req.body.name,
-        username: genUsername(req.body.name),
-        phoneNumber: req.body.phoneNumber,
-        email: req.body.email,
-        password: req.body.password,
-      };
-
-      const status = await User.create(newUser);
-      if (status) {
-        return res.json({
-          success: true,
-          message: "User created successfully!",
-        });
-      } else {
-        return res.json({
-          success: false,
-          message: "User creation failed!",
-        });
-      }
-    }
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      success: false,
-      message: "An error occurred during user creation.",
-    });
-  }
-});
 
 router.get("/home/settings", (req, res) => {
   return res.json({
