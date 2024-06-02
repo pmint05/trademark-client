@@ -9,82 +9,82 @@ import {
 import "./App.css";
 
 import { PUBLIC_ROUTES, PRIVATE_ROUTES, PREVENT_RELOGIN } from "@/routes";
-import { useAuth } from "./hooks";
 import { DefaultLayout } from "@/components/layouts";
+import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./routes/ProtectedRoute";
 function App() {
 	return (
-		<Router>
-			<div className="App">
-				<Routes>
-					{PUBLIC_ROUTES.map((r, i) => {
-						let Layout = DefaultLayout;
-						if (r.layout) {
-							Layout = r.layout;
-						} else if (r.layout === null) {
-							Layout = Fragment;
-						}
+		<AuthProvider>
+			<Router>
+				<div className="App">
+					<Routes>
+						{PUBLIC_ROUTES.map((r, i) => {
+							let Layout = DefaultLayout;
+							if (r.layout) {
+								Layout = r.layout;
+							} else if (r.layout === null) {
+								Layout = Fragment;
+							}
 
-						const Page = r.element;
-
-						return PREVENT_RELOGIN.includes(r.path) ? (
-							<Route
-								key={i}
-								path={r.path}
-								element={
-									<PreventReLogin to={r.fail}>
+							const Page = r.element;
+							if (
+								PREVENT_RELOGIN.includes(r.path) &&
+								localStorage.getItem("token")
+							) {
+								return (
+									<Route
+										key={i}
+										path={r.path}
+										element={
+											<Navigate to={r.fallback} replace />
+										}
+									></Route>
+								);
+							}
+							return (
+								<Route
+									key={i}
+									path={r.path}
+									element={
 										<Layout>
 											<Page />
 										</Layout>
-									</PreventReLogin>
-								}
-							></Route>
-						) : (
-							<Route
-								key={i}
-								path={r.path}
-								element={
-									<Layout>
-										<Page />
-									</Layout>
-								}
-							></Route>
-						);
-					})}
-					{PRIVATE_ROUTES.map((r, i) => {
-						let Layout = DefaultLayout;
-						if (r.layout) {
-							Layout = r.layout;
-						} else if (r.layout === null) {
-							Layout = Fragment;
-						}
+									}
+								></Route>
+							);
+						})}
+						{PRIVATE_ROUTES.map((r, i) => {
+							let Layout = DefaultLayout;
+							if (r.layout) {
+								Layout = r.layout;
+							} else if (r.layout === null) {
+								Layout = Fragment;
+							}
 
-						const Page = r.element;
+							const Page = r.element;
 
-						return (
-							<Route
-								key={i}
-								path={r.path}
-								element={
-									<PrivateRoute to={r.fail}>
-										<Layout>
-											<Page />
-										</Layout>
-									</PrivateRoute>
-								}
-							></Route>
-						);
-					})}
-				</Routes>
-			</div>
-		</Router>
+							return (
+								<Route
+									key={i}
+									path={r.path}
+									element={
+										<ProtectedRoute
+											roles={r.roles}
+											fallback={r.fallback}
+											{...r}
+										>
+											<Layout>
+												<Page />
+											</Layout>
+										</ProtectedRoute>
+									}
+								></Route>
+							);
+						})}
+					</Routes>
+				</div>
+			</Router>
+		</AuthProvider>
 	);
-}
-function PrivateRoute({ to, children }) {
-	const auth = useAuth();
-	return !auth ? <Navigate to={to} /> : children;
-}
-function PreventReLogin({ to, children }) {
-	const auth = useAuth();
-	return auth ? <Navigate to={to} /> : children;
 }
 export default App;

@@ -1,3 +1,2 @@
-import useAuth from "./useAuth";
-
-export { useAuth };
+import useBlockScroll from "./useBlockScroll";
+export { useBlockScroll };

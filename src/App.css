@@ -34,3 +34,14 @@ body {
 	line-height: 1;
 	@apply bg-slate-800;
 }
+body,
+html {
+	overflow-x: hidden;
+}
+#chart > div.tradingview-widget-container > iframe:first-child {
+	height: 100% !important;
+}
+
+#chart > div.tradingview-widget-container > iframe:not(:first-child) {
+	display: none !important;
+}

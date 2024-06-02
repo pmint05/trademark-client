@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Cryptocon } from "cryptocons";
 import { Input, Table, ConfigProvider } from "antd";
+import { Link } from "react-router-dom";
 const { Search } = Input;
 const { Column, ColumnGroup } = Table;
-
+import TradingViewWidget from "../../components/TradingViewWidget";
+import axios from "axios";
 function Home() {
 	const topCoins = [
 		{
@@ -54,21 +56,49 @@ function Home() {
 		"SOL",
 		"UNI",
 	];
+	const links = [
+		{
+			id: 1,
+			text: "Home",
+			url: "/",
+		},
+		{
+			id: 2,
+			text: "About",
+			url: "/about",
+		},
+		{
+			id: 3,
+			text: "Services",
+			url: "/services",
+		},
+		{
+			id: 4,
+			text: "Pricing",
+			url: "/pricing",
+		},
+	];
 	const [tradeType, setTradeType] = useState("buy");
+	const [btc, setBtc] = useState({});
+	useEffect(() => {
+		axios.get("https://api.coinlore.net/api/tickers/").then((res) => {
+			setBtc(res.data.data[0]);
+		});
+	}, []);
 	// const onSearch = (value, _e, info) => console.log(info?.source, value);
 	return (
 		<>
 			<section
 				id="chart"
-				className="mt-20 lg:max-w-4xl xl:max-w-6xl mx-auto p-4"
+				className="mt-20 lg:max-w-4xl xl:max-w-6xl mx-auto p-4 lg:p-0"
 			>
-				<div className="coin-change flex flex-col items-center justify-center bg-slate-700 bg-opacity-50 rounded-lg ring-slate-700 ring-1">
-					<div className="coin-code flex flex-col items-center justify-center pt-4">
-						<h1 className="font-bold text-xl text-white">
+				<div className="coin-change flex flex-col items-center justify-center md:flex-row md:px-10 bg-slate-700 bg-opacity-50 rounded-lg ring-slate-700 ring-1">
+					<div className="coin-code flex flex-col items-center justify-center pt-4 md:pt-0">
+						<h1 className="font-bold text-xl text-white md:text-2xl">
 							BTC/USTD
 						</h1>
 					</div>
-					<div className="flex flex-wrap justify-between gap-4 w-full p-4">
+					<div className="flex flex-wrap justify-between gap-4 w-full p-4 md:px-10">
 						<span className="coin-info">
 							<p className="text-blue-500">Giá</p>
 							<p
@@ -77,31 +107,46 @@ function Home() {
 									textShadow: "0 0 5px #16a085",
 								}}
 							>
-								$40,000
-							</p>
-						</span>
-						<span className="coin-info">
-							<p className="text-blue-500">Giá cuối cùng</p>
-							<p className="text-gray-300 font-semibold">
-								$40,000
+								${btc.price_usd}
 							</p>
 						</span>
 						<span className="coin-info">
 							<p className="text-blue-500">Thay đổi 1H</p>
-							<p className="text-red-500">2.5%</p>
+							<p
+								className={`${
+									btc.percent_change_1h?.includes("-")
+										? "text-red-500"
+										: "text-green-500"
+								}`}
+							>
+								{btc.percent_change_1h}
+							</p>
 						</span>
 						<span className="coin-info">
 							<p className="text-blue-500">Thay đổi 24H</p>
-							<p className="text-red-500">1.2%</p>
+							<p
+								className={`${
+									btc.percent_change_24h?.includes("-")
+										? "text-red-500"
+										: "text-green-500"
+								}`}
+							>
+								{btc.percent_change_24h}
+							</p>
 						</span>
 						<span className="coin-info">
 							<p className="text-blue-500">Vốn hóa thị trường</p>
 							<p className="text-gray-300 font-semibold">
-								$999,999,999
+								$
+								{btc.market_cap_usd.toLocaleString({
+									style: "currency",
+									currency: "USD",
+								})}
 							</p>
 						</span>
 					</div>
 				</div>
+				<TradingViewWidget />
 			</section>
 			<section
 				id="quick-trade"
