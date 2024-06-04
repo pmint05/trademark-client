@@ -12,17 +12,28 @@ function Login() {
 	const location = useLocation();
 	const { from } = location.state || { from: { pathname: "/" } };
 
-	const onFinish = (values) => {
-		console.log("Success:", values);
-		login(values);
+  const onFinish = async (values) => {
+    try {
+      const response = await axios.post("http://localhost:3000/api/login", values);
+      const { success, role, token, message } = response.data;
 
-		// Navigate the user or admin to the fallback URL
-		if (user && user.role === "admin") {
-			navigate("/admin/dashboard");
-		} else {
-			navigate(from);
-		}
-	};
+      if (success) {
+        login({ role, token });
+
+        if (role === "admin") {
+          navigate("/admin/dashboard");
+        } else {
+          navigate(from);
+        }
+      } else {
+        console.error(message); // Handle error messages appropriately
+      }
+    } catch (error) {
+      console.error("Error logging in:", error);
+      // Handle error cases, such as network errors
+    }
+  };
+
 	const onFinishFailed = (errorInfo) => {
 		console.log("Failed:", errorInfo);
 	};
