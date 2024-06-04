@@ -8,6 +8,7 @@ const { genUsername } = require("../utils/genUsername");
 const Transaction = require("../app/models/Transaction");
 const { getCurrentCoin } = require("../utils/getCurrentCoin");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 
 const secretKey = "danieldev";
 
@@ -38,6 +39,7 @@ function checkToken(req, res, next) {
       .json({ success: false, message: "Tokens not provided." });
   }
 }
+// Đăng ký người dùng
 router.post("/user/create", async (req, res) => {
   try {
     const exists = await User.findOne({ email: req.body.email });
@@ -53,21 +55,24 @@ router.post("/user/create", async (req, res) => {
 
       const newUser = {
         name: req.body.name,
-        role: req.body.role || 'user', 
+        role: "user",
         username: genUsername(req.body.name),
         phoneNumber: req.body.phoneNumber,
         email: req.body.email,
-        password: hashedPassword, 
+        password: hashedPassword,
       };
 
       const status = await User.create(newUser);
       if (status) {
-        // Tạo token sau khi đăng ký thành công
-        const token = createToken({ username: newUser.username, role: newUser.role });
+        // Create token after successful registration
+        const token = createToken({
+          username: newUser.username,
+          role: newUser.role,
+        });
         return res.json({
           success: true,
           message: "User created successfully!",
-          token, // Trả về token
+          token, // Return token
         });
       } else {
         return res.json({
@@ -88,14 +93,14 @@ router.post("/user/create", async (req, res) => {
 // Đăng nhập người dùng
 router.post("/login", async (req, res) => {
   try {
-    const { username, password } = req.body;
-    const user = await User.findOne({ username });
+    const { email, password } = req.body; // Thay username bằng email
+    const user = await User.findOne({ email }); // Tìm kiếm bằng email
 
     if (user) {
       // So sánh mật khẩu đã mã hóa
       const isMatch = await bcrypt.compare(password, user.password);
       if (isMatch) {
-        const token = createToken({ username, role: user.role });
+        const token = createToken({ username: user.username, role: user.role });
         if (user.role === "admin") {
           return res.json({
             success: true,
@@ -258,7 +263,6 @@ router.post("/buy/:coin", async (req, res) => {
         { new: true }
       );
 
-
       if (trans && degreeWallet) {
         return res.json({
           success: true,
@@ -284,8 +288,6 @@ router.post("/buy/:coin", async (req, res) => {
     });
   }
 });
-
-
 
 router.get("/home/settings", (req, res) => {
   return res.json({
