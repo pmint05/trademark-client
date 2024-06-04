@@ -120,7 +120,7 @@ function Home() {
 							<p className="text-blue-500">Vốn hóa thị trường</p>
 							<p className="text-gray-300 font-semibold">
 								$
-								{btc.market_cap_usd.toLocaleString({
+								{btc.market_cap_usd?.toLocaleString({
 									style: "currency",
 									currency: "USD",
 								})}
