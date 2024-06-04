@@ -7,43 +7,25 @@ const { Column, ColumnGroup } = Table;
 import TradingViewWidget from "../../components/TradingViewWidget";
 import axios from "axios";
 function Home() {
-	const topCoins = [
-		{
-			key: 1,
-			code: "BTC",
-			icon: "BitcoinBadge",
-			change: "+1.5%",
-			price: "$40,000",
-		},
-		{
-			key: 2,
-			code: "ETH",
-			icon: "EthereumBadge",
-			change: "+1.5%",
-			price: "$2,500",
-		},
-		{
-			key: 3,
-			code: "BNB",
-			icon: "BinanceBadge",
-			change: "+1.5%",
-			price: "$350",
-		},
-		{
-			key: 4,
-			code: "USDT",
-			icon: "TetherBadge",
-			change: "-1.5%",
-			price: "$1",
-		},
-		{
-			key: 5,
-			code: "ADA",
-			icon: "CardanoBadge",
-			change: "+1.5%",
-			price: "$1.5",
-		},
-	];
+
+	const [topCoins, setTopCoins] = useState([]);
+	useEffect(() => {
+		axios.get("http://localhost:3000/api/coin/list")
+				.then((res) => {
+						const fetchedCoins = res.data.map((coin, index) => ({
+								key: index + 1,
+								code: coin.symbol.toUpperCase(),
+								icon: coin.name.replace(" ", "") + "Badge",
+								change: `${coin.price_change_percentage_24h > 0 ? "+" : ""}${coin.price_change_percentage_24h.toFixed(2)}%`,
+								price: `$${coin.current_price.toLocaleString()}`
+						}));
+						setTopCoins(fetchedCoins);
+						console.log(topCoins);
+				})
+				.catch((error) => {
+						console.error("Error fetching the coins data:", error);
+				});
+}, []);
 	const coinCodes = [
 		"BTC",
 		"ETH",
