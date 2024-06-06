@@ -50,12 +50,12 @@ router.post("/user/create", async (req, res) => {
         message: "User already exists",
       });
     } else {
-      // Encrypt password
+      // Mã hóa mật khẩu
       const hashedPassword = await bcrypt.hash(req.body.password, 10);
 
       const newUser = {
         name: req.body.name,
-        role: "user",
+        roles: ["user"], // Đảm bảo roles là một mảng
         username: genUsername(req.body.name),
         phoneNumber: req.body.phoneNumber,
         email: req.body.email,
@@ -64,15 +64,15 @@ router.post("/user/create", async (req, res) => {
 
       const status = await User.create(newUser);
       if (status) {
-        // Create token after successful registration
+        // Tạo token sau khi đăng ký thành công
         const token = createToken({
           username: newUser.username,
-          role: newUser.role,
+          roles: newUser.roles,
         });
         return res.json({
           success: true,
           message: "User created successfully!",
-          token, // Return token
+          token, // Trả về token
         });
       } else {
         return res.json({
@@ -89,30 +89,38 @@ router.post("/user/create", async (req, res) => {
     });
   }
 });
-
-// Đăng nhập người dùng
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body; // Thay username bằng email
-    const user = await User.findOne({ email }); // Tìm kiếm bằng email
+    const { email, password } = req.body; 
+    const user = await User.findOne({ email }); 
 
     if (user) {
+      console.log("User: ", user);
       // So sánh mật khẩu đã mã hóa
       const isMatch = await bcrypt.compare(password, user.password);
       if (isMatch) {
-        const token = createToken({ username: user.username, role: user.role });
-        if (user.role === "admin") {
+        const token = createToken({ username: user.username, roles: user.roles });
+        console.log("Roles: ", user.roles);
+        if (user.roles.includes("admin")) {
           return res.json({
             success: true,
+            name: user.name,
+            username: user.username,
+            phoneNumber: user.phoneNumber,
+            bankNumber: user.bankNumber,
+            bankName: user.bankName,
+            wallet: user.wallet,
             message: "Login successfully!",
-            role: "admin",
+            roles: ["admin"],
             token,
           });
         } else {
           return res.json({
             success: true,
+            name: user.name,
+            username: user.username,
             message: "Login successfully!",
-            role: "user",
+            roles: ["user"], // Đảm bảo roles là một mảng
             token,
           });
         }
