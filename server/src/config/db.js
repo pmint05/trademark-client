@@ -3,7 +3,7 @@ const dbName = "BO_DB";
 
 async function connect() {
   try {
-    await databaseClient.connect(`mongodb://127.0.0.1:27017/${dbName}`, {
+    await databaseClient.connect(`mongodb+srv://huydq23itb:OZ959l8m1ORJbiPe@trademark.qbrpwak.mongodb.net/`, {
       useUnifiedTopology: true,
       useNewUrlParser: true,
     });
