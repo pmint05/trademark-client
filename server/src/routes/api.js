@@ -313,6 +313,8 @@ router.get("/buy/list", async (req, res) => {
   return res.json(listBuy);
 });
 
+
+
 router.get("/coin/list", async (req, res) => {
   getCurrentCoin()
     .then((currentCoin) => {
