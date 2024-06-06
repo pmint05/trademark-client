@@ -6,8 +6,8 @@ const userSchema = new Schema({
         type: String,
         
     },
-    role: {
-        type: String
+    roles: {
+        type: []
     }
     ,
     username: {
