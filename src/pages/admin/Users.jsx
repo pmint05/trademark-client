@@ -28,45 +28,63 @@ function Users() {
 	const [users, setUsers] = useState([]);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [searchField, setSearchField] = useState("name");
-	const userLength = 50;
 	useEffect(() => {
 		// Fetch users from API
-		// axios
-		// 	.get("/api/users")
-		// 	.then((response) => {
-		// 		setUsers(response.data);
-		// 	})
-		// 	.catch((error) => {
-		// 		console.error("Error fetching users", error);
-		// 	});
-		const status = ["Active", "Verified", "Unverified", "Banned"];
-		setUsers(
-			Array.from({ length: userLength }, (_, index) => ({
-				id: index + 1,
-				order: index + 1,
-				username: `userabcxyz${index}`,
-				name: `User ${index + 1}`,
-				email: `user${index + 1}@gmai.com`,
-				bankName: "Vietcombank",
-				bankAccount: "0123456789",
-				status: status[Math.floor(Math.random() * status.length)],
-				wallet: [
-					{
-						code: "BTC",
-						balance: 0.0001,
-					},
-					{
-						code: "ETH",
-						balance: 0.001,
-					},
-					{
-						code: "USDT",
-						balance: 1,
-					},
-				],
-				totalTransactions: Math.floor(Math.random() * 100000),
-			}))
-		);
+		// Fetch users from API
+		axios
+			.get("https://api.trademarkk.com.vn/api/users")
+			.then(async (response) => {
+				const _users = await Promise.all(
+					response.data.map(async (u, i) => {
+						const res = await axios.get(
+							`https://api.trademarkk.com.vn/api/wallet/${u.username}`
+						);
+						u.order = i + 1;
+						if (res.data.success) {
+							u.wallet = res.data.wallet;
+						} else {
+							u.wallet = {
+								coins: [],
+								balance: 0,
+							};
+						}
+						return u;
+					})
+				);
+				console.log(_users);
+				setUsers(_users);
+			})
+			.catch((error) => {
+				console.error("Error fetching users", error);
+			});
+		// setUsers(
+		// 	Array.from({ length: userLength }, (_, index) => ({
+		// 		id: index + 1,
+		// 		order: index + 1,
+		// 		username: `userabcxyz${index}`,
+		// 		name: `User ${index + 1}`,
+		// 		email: `user${index + 1}@gmai.com`,
+		// 		bankName: "Vietcombank",
+		// 		bankNumber: "0123456789",
+		// 		wallet: {
+		// 			coins: [
+		// 				{
+		// 					code: "BTC",
+		// 					balance: 0.0001,
+		// 				},
+		// 				{
+		// 					code: "ETH",
+		// 					balance: 0.001,
+		// 				},
+		// 				{
+		// 					code: "USDT",
+		// 					balance: 1,
+		// 				},
+		// 			],
+		// 			balance: Math.floor(Math.random() * 100000),
+		// 		},
+		// 	}))
+		// );
 	}, []);
 	const [open, setOpen] = useState(false);
 	const [initialValues, setInitialValues] = useState({});
@@ -90,57 +108,12 @@ function Users() {
 			key: "name",
 		},
 		{
-			title: "Status",
-			dataIndex: "status",
-			key: "status",
-			width: 80,
-			filters: [
-				{
-					text: "Active",
-					value: "Active",
-				},
-				{
-					text: "Verified",
-					value: "Verified",
-				},
-				{
-					text: "Unverified",
-					value: "Unverified",
-				},
-				{
-					text: "Banned",
-					value: "Banned",
-				},
-			],
-			onFilter: (value, record) => record.status.indexOf(value) === 0,
-			render: (status) => {
-				let color = "";
-				switch (status) {
-					case "Active":
-						color = "green";
-						break;
-					case "Verified":
-						color = "blue";
-						break;
-					case "Unverified":
-						color = "orange";
-						break;
-					case "Banned":
-						color = "red";
-						break;
-					default:
-						color = "gray";
-				}
-				return <Tag color={color}>{status.toUpperCase()}</Tag>;
-			},
-		},
-		{
 			title: "Wallet",
 			dataIndex: "wallet",
 			key: "wallet",
 			render: (wallet) => (
 				<div>
-					{wallet.map((coin) => (
+					{wallet?.coins.map((coin) => (
 						<div key={coin.code}>
 							{coin.code}: {coin.balance}
 						</div>
@@ -149,13 +122,13 @@ function Users() {
 			),
 		},
 		{
-			title: "Total Transactions",
-			dataIndex: "totalTransactions",
-			key: "totalTransactions",
+			title: "Balance",
+			dataIndex: "wallet",
+			key: "balance",
 			width: 180,
-			sorter: (a, b) => a.totalTransactions - b.totalTransactions,
-			render: (totalTransactions) => (
-				<div>{totalTransactions.toLocaleString()} VND</div>
+			sorter: (a, b) => a.balance - b.balance,
+			render: (wallet) => (
+				<div>{wallet.balance.toLocaleString()} VND</div>
 			),
 		},
 		{
@@ -178,7 +151,22 @@ function Users() {
 		setInitialValues({});
 		setOpen(false);
 	};
-	const handleSaveUser = (user) => {};
+	const handleSaveUser = async (user) => {
+		const res = await axios.post(
+			`https://api.trademarkk.com.vn/api/admin/user/info/update`,
+			user
+		);
+		if (res.data.success) {
+			const updatedUsers = users.map((u) => {
+				if (u.username === user.username) {
+					return user;
+				}
+				return u;
+			});
+			setUsers(updatedUsers);
+			setOpen(false);
+		}
+	};
 	const handleSearch = (event) => {
 		setSearchTerm(event.target.value);
 	};
@@ -198,28 +186,28 @@ function Users() {
 				<Col xs={24} sm={12} md={12} lg={6} xl={6}>
 					<Card title="Active Users">
 						<h1 className="font-bold text-2xl text-green-500">
-							{Math.floor(Math.random() * userLength)}
+							{Math.floor(Math.random() * users.length)}
 						</h1>
 					</Card>
 				</Col>
 				<Col xs={24} sm={12} md={12} lg={6} xl={6}>
 					<Card title="Verified Users">
 						<h1 className="font-bold text-2xl text-blue-500">
-							{Math.floor(Math.random() * userLength)}
+							{Math.floor(Math.random() * users.length)}
 						</h1>
 					</Card>
 				</Col>
 				<Col xs={24} sm={12} md={12} lg={6} xl={6}>
 					<Card title="Unverified Users">
 						<h1 className="font-bold text-2xl text-gray-500">
-							{Math.floor(Math.random() * userLength)}
+							{Math.floor(Math.random() * users.length)}
 						</h1>
 					</Card>
 				</Col>
 				<Col xs={24} sm={12} md={12} lg={6} xl={6}>
 					<Card title="Banned Users">
 						<h1 className="font-bold text-2xl text-red-500">
-							{Math.floor(Math.random() * userLength)}
+							{Math.floor(Math.random() * users.length)}
 						</h1>
 					</Card>
 				</Col>
@@ -234,7 +222,7 @@ function Users() {
 						<Select defaultValue="name" onChange={handleSelect}>
 							<Option value="name">Name</Option>
 							<Option value="username">Username</Option>
-							<Option value="bankAccount">Bank Account</Option>
+							<Option value="bankNumber">Bank Account</Option>
 							<Option value="email">Email</Option>
 						</Select>
 					</div>
@@ -277,6 +265,12 @@ function Users() {
 	);
 }
 const UserInfoDrawerForm = ({ open, onClose, onSave, user }) => {
+	const [availableBanks, setAvailableBanks] = useState([]);
+	useEffect(() => {
+		axios.get("https://api.vietqr.io/v2/banks").then((response) => {
+			setAvailableBanks(response.data.data);
+		});
+	}, []);
 	const [availableCoins, setAvailableCoins] = useState([]);
 	const [qrVisible, setQrVisible] = useState(false);
 	const [qrCode, setQrCode] = useState("");
@@ -286,8 +280,8 @@ const UserInfoDrawerForm = ({ open, onClose, onSave, user }) => {
 	});
 	const generateQRCode = async () => {
 		const bankName = form.getFieldValue("bankName");
-		const bankAccount = form.getFieldValue("bankAccount");
-		const vietQRImg = `https://img.vietqr.io/image/${bankName}-${bankAccount}-compact.png?addInfo=`;
+		const bankNumber = form.getFieldValue("bankNumber");
+		const vietQRImg = `https://img.vietqr.io/image/${bankName}-${bankNumber}-compact.png?addInfo=`;
 		setQrCode(vietQRImg);
 		setQrVisible(true);
 	};
@@ -359,11 +353,21 @@ const UserInfoDrawerForm = ({ open, onClose, onSave, user }) => {
 				<Row gutter={16} className="mb-6">
 					<Col lg={8} xs={12}>
 						<Form.Item label="Bank name" name="bankName">
-							<Input />
+							<Select>
+								{availableBanks &&
+									availableBanks.map((bank) => (
+										<Option
+											key={bank.id}
+											value={bank.shortName}
+										>
+											{bank.shortName}
+										</Option>
+									))}
+							</Select>
 						</Form.Item>
 					</Col>
 					<Col lg={16} xs={12}>
-						<Form.Item label="Bank account" name="bankAccount">
+						<Form.Item label="Bank account" name="bankNumber">
 							<Input />
 						</Form.Item>
 					</Col>
@@ -378,7 +382,7 @@ const UserInfoDrawerForm = ({ open, onClose, onSave, user }) => {
 						<h1>Wallet</h1>
 					</Col>
 					<Col span={24}>
-						<Form.List name="wallet">
+						<Form.List name={["wallet", "coins"]}>
 							{(fields, { add, remove }) => (
 								<>
 									<Table
@@ -423,9 +427,7 @@ const UserInfoDrawerForm = ({ open, onClose, onSave, user }) => {
 																	key={
 																		coin.id
 																	}
-																	value={
-																		coin.symbol
-																	}
+																	value={coin.symbol.toLowerCase()}
 																>
 																	{coin.symbol.toUpperCase()}
 																</Option>
@@ -490,22 +492,9 @@ const UserInfoDrawerForm = ({ open, onClose, onSave, user }) => {
 					</Col>
 				</Row>
 				<Row gutter={16}>
-					<Col span={12}>
-						<Form.Item
-							label="Total Transactions"
-							name="totalTransactions"
-						>
+					<Col span={24}>
+						<Form.Item label="Balance" name={["wallet", "balance"]}>
 							<Input addonAfter="VND" />
-						</Form.Item>
-					</Col>
-					<Col span={12}>
-						<Form.Item label="Status" name="status">
-							<Select>
-								<Option value="Active">Active</Option>
-								<Option value="Verified">Verified</Option>
-								<Option value="Unverified">Unverified</Option>
-								<Option value="Banned">Banned</Option>
-							</Select>
 						</Form.Item>
 					</Col>
 				</Row>

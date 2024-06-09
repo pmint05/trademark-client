@@ -1,7 +1,6 @@
 import { Home, Profile } from "@/pages/home";
 import {
 	Dashboard,
-	AdminLogin,
 	Transactions,
 	Currencies,
 	Users,
@@ -19,7 +18,7 @@ const PUBLIC_ROUTES = [
 	},
 	{
 		path: "/admin/login",
-		element: AdminLogin,
+		element: Login,
 		exact: true,
 		layout: null,
 		fallback: "/admin/dashboard",
@@ -41,7 +40,7 @@ const PUBLIC_ROUTES = [
 	},
 	{
 		path: "/admin",
-		element: AdminLogin,
+		element: Login,
 		exact: true,
 		layout: null,
 		fallback: "/admin/dashboard",
@@ -54,7 +53,7 @@ const PRIVATE_ROUTES = [
 		element: Dashboard,
 		exact: true,
 		layout: AdminLayout,
-		fallback: "/admin/login",
+		fallback: "/auth/login",
 		roles: ["admin"],
 	},
 	{
@@ -62,7 +61,7 @@ const PRIVATE_ROUTES = [
 		element: Transactions,
 		exact: true,
 		layout: AdminLayout,
-		fallback: "/admin/login",
+		fallback: "/auth/login",
 		roles: ["admin"],
 	},
 	{
@@ -70,7 +69,7 @@ const PRIVATE_ROUTES = [
 		element: Currencies,
 		exact: true,
 		layout: AdminLayout,
-		fallback: "/admin/login",
+		fallback: "/auth/login",
 		roles: ["admin"],
 	},
 	{
@@ -78,7 +77,7 @@ const PRIVATE_ROUTES = [
 		element: Users,
 		exact: true,
 		layout: AdminLayout,
-		fallback: "/admin/login",
+		fallback: "/auth/login",
 		roles: ["admin"],
 	},
 	{
@@ -86,7 +85,7 @@ const PRIVATE_ROUTES = [
 		element: PaymentGateways,
 		exact: true,
 		layout: AdminLayout,
-		fallback: "/admin/login",
+		fallback: "/auth/login",
 		roles: ["admin"],
 	},
 	{
@@ -94,7 +93,7 @@ const PRIVATE_ROUTES = [
 		element: Deposits,
 		exact: true,
 		layout: AdminLayout,
-		fallback: "/admin/login",
+		fallback: "/auth/login",
 		roles: ["admin"],
 	},
 	{

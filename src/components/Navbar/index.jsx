@@ -9,11 +9,37 @@ import {
 	UserOutlined,
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useBlockScroll } from "../../hooks";
 import { useAuth } from "../../context/AuthContext";
+import formatLongNum from "../../helper/formatLongNum";
+import axios from "axios";
 function Navbar() {
 	const { user } = useAuth();
+	const [userInfo, setUserInfo] = useState(null);
+	const [wallet, setWallet] = useState({});
+	useEffect(() => {
+		if (!user) return;
+		axios.get("https://api.trademarkk.com.vn/api/users").then((res) => {
+			const _info = res.data.find(
+				(item) => item.username === user.username
+			);
+			setUserInfo(_info);
+		});
+		axios
+			.get(`https://api.trademarkk.com.vn/api/wallet/${user.username}`)
+			.then((res) => {
+				if (res.data.success) {
+					setWallet(res.data.wallet);
+				} else {
+					setWallet({
+						coins: [],
+						balance: 0,
+					});
+				}
+			});
+	}, [user]);
+
 	const links = [
 		{
 			id: 1,
@@ -85,18 +111,37 @@ function Navbar() {
 							<CloseOutlined />
 						</button>
 						<div className="links flex flex-col justify-center items-center gap-2 text-xl">
-							<Link
-								to="/auth/login"
-								className="rounded-md bg-blue-500 text-white px-4 py-1"
-							>
-								Login
-							</Link>
-							<Link
-								to="/auth/register"
-								className="rounded-md ring-blue-500 ring-2 text-white px-4 py-1 my-2"
-							>
-								Register
-							</Link>
+							{user ? (
+								<Link
+									to="/profile"
+									className="hover:text-blue-500"
+								>
+									<UserOutlined /> {userInfo && userInfo.name}
+								</Link>
+							) : (
+								<>
+									<Link
+										to="/auth/login"
+										className="rounded-md bg-blue-500 text-white px-4 py-1"
+									>
+										Login
+									</Link>
+									<Link
+										to="/auth/register"
+										className="rounded-md ring-blue-500 ring-2 text-white px-4 py-1 my-2"
+									>
+										Register
+									</Link>
+								</>
+							)}
+							{userInfo && userInfo.roles.includes("admin") && (
+								<Link
+									to="/admin/dashboard"
+									className="hover:text-blue-500"
+								>
+									Admin
+								</Link>
+							)}
 							{links.map((link) => (
 								<Link
 									key={link.id}
@@ -123,6 +168,14 @@ function Navbar() {
 				</div>
 				{/* PC NAV */}
 				<div className="pc hidden md:flex items-center gap-4">
+					{userInfo && userInfo.roles.includes("admin") && (
+						<Link
+							to="/admin/dashboard"
+							className="hover:text-blue-500"
+						>
+							Admin
+						</Link>
+					)}
 					{links.map((link) => (
 						<Link
 							key={link.id}
@@ -134,9 +187,18 @@ function Navbar() {
 					))}
 					<div>
 						{user ? (
-							<Link to="/profile" className="hover:text-blue-500">
-								<UserOutlined /> {user.name}
-							</Link>
+							<>
+								<Link
+									to="/profile"
+									className="hover:text-blue-500"
+								>
+									<UserOutlined /> {userInfo && userInfo.name}
+								</Link>
+								<span className="bg-slate-600 text-center px-2 py-1 rounded-lg ml-2">
+									{wallet && formatLongNum(wallet.balance)}{" "}
+									VNĐ
+								</span>
+							</>
 						) : (
 							<>
 								<Link

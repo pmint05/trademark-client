@@ -3,18 +3,45 @@ import {
 	KeyOutlined,
 	UserOutlined,
 } from "@ant-design/icons";
-import { Button, Checkbox, ConfigProvider, Form, Input } from "antd";
-import { Link } from "react-router-dom";
-const onFinish = (values) => {
-	console.log("Success:", values);
-};
-const onFinishFailed = (errorInfo) => {
-	console.log("Failed:", errorInfo);
-};
+import { Button, ConfigProvider, Form, Input, message } from "antd";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios"; // Import axios
 
 function Register() {
 	const [form] = Form.useForm();
 	const { getFieldValue } = form;
+	const navigate = useNavigate();
+	const onFinish = async (values) => {
+		try {
+			const response = await axios.post(
+				"https://api.trademarkk.com.vn/api/user/create",
+				{
+					name: values.name,
+					roles: ["user"],
+					phoneNumber: values.phoneNumber,
+					email: values.email,
+					password: values.password,
+				}
+			);
+
+			if (response.data.success) {
+				message.success(response.data.message);
+				navigate("/auth/login");
+			} else {
+				message.error(response.data.message);
+			}
+		} catch (error) {
+			console.error("Error during registration:", error);
+			message.error(
+				"An error occurred during registration. Please try again."
+			);
+		}
+	};
+
+	const onFinishFailed = (errorInfo) => {
+		console.log("Failed:", errorInfo);
+	};
+
 	return (
 		<div className="h-screen flex items-center justify-center flex-col text-white">
 			<div className="fixed top-4 left-4">
@@ -63,12 +90,42 @@ function Register() {
 					autoComplete="off"
 				>
 					<Form.Item
-						label="Email"
-						name="Email"
+						label="Tên"
+						name="name"
 						rules={[
 							{
 								required: true,
-								message: "Email is requred!",
+								message: "Tên là bắt buộc!",
+							},
+						]}
+					>
+						<Input placeholder="name..." />
+					</Form.Item>
+
+					<Form.Item
+						label="Số điện thoại"
+						name="phoneNumber"
+						rules={[
+							{
+								required: true,
+								message: "Số điện thoại là bắt buộc!",
+							},
+							{
+								pattern: /^\d+$/,
+								message: "Số điện thoại không hợp lệ!",
+							},
+						]}
+					>
+						<Input placeholder="phone number..." />
+					</Form.Item>
+
+					<Form.Item
+						label="Email"
+						name="email"
+						rules={[
+							{
+								required: true,
+								message: "Email là bắt buộc!",
 							},
 							{
 								type: "email",
@@ -85,24 +142,20 @@ function Register() {
 						rules={[
 							{
 								required: true,
-								message: "Password is required!",
+								message: "Mật khẩu là bắt buộc!",
 							},
 						]}
 					>
-						<Input.Password
-							placeholder="password..."
-							style={{
-								backgroundColor: "transparent !inportant",
-							}}
-						/>
+						<Input.Password placeholder="password..." />
 					</Form.Item>
+
 					<Form.Item
 						label="Nhập lại mật khẩu"
 						name="password2"
 						rules={[
 							{
 								required: true,
-								message: "Password is required!",
+								message: "Mật khẩu là bắt buộc!",
 							},
 							{
 								validator: (_, value) => {
@@ -116,12 +169,7 @@ function Register() {
 							},
 						]}
 					>
-						<Input.Password
-							placeholder="password..."
-							style={{
-								backgroundColor: "transparent !inportant",
-							}}
-						/>
+						<Input.Password placeholder="password..." />
 					</Form.Item>
 
 					<Form.Item

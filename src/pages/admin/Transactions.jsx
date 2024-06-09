@@ -2,60 +2,70 @@ import React, { useEffect, useState } from "react";
 import { Table, Tag, DatePicker, Button } from "antd";
 import moment from "moment";
 import Search from "antd/es/input/Search";
+import axios from "axios";
 
 const { RangePicker } = DatePicker;
 
 function Transactions() {
-	const coins = ["BTC", "ETH", "USD", "EUR", "JPY", "CNY", "KRW", "INR"];
-
+	const [coins, setCoins] = useState([]);
+	useEffect(() => {
+		axios
+			.get("https://api.trademarkk.com.vn/api/coins")
+			.then((res) => {
+				setCoins(res.data.coins);
+			})
+			.catch((err) => {
+				console.log(err);
+			});
+	}, []);
 	const columns = [
 		{
 			title: "ID",
-			dataIndex: "id",
-			key: "id",
+			dataIndex: "_id",
+			key: "_id",
 		},
 		{
 			title: "Username",
-			dataIndex: "username",
-			key: "username",
-			sorter: (a, b) => a.username.localeCompare(b.username),
+			dataIndex: "transUsername",
+			key: "transUsername",
+			sorter: (a, b) => a.transUsername.localeCompare(b.transUsername),
 		},
 		{
 			title: "Coin",
-			dataIndex: "coin",
-			key: "coin",
-			onFilter: (value, record) => record.coin.indexOf(value) === 0,
+			dataIndex: "transNameCoin",
+			key: "transNameCoin",
+			onFilter: (value, record) =>
+				record.transNameCoin.indexOf(value) === 0,
 			filters: coins.map((coin) => ({ text: coin, value: coin })),
 			filterMode: "tree",
 		},
 		{
 			title: "Amount",
-			dataIndex: "amount",
-			key: "amount",
-			sorter: (a, b) => a.amount - b.amount,
+			dataIndex: "transAmount",
+			key: "transAmount",
+			sorter: (a, b) => a.transAmount - b.transAmount,
 			sortDirections: ["descend", "ascend"],
 		},
 		{
 			title: "Type",
-			dataIndex: "transactionType",
-			key: "transactionType",
+			dataIndex: "transType",
+			key: "transType",
 			filters: [
-				{ text: "Debit", value: "debit" },
-				{ text: "Credit", value: "credit" },
+				{ text: "Sell", value: "sell" },
+				{ text: "Buy", value: "buy" },
 			],
-			onFilter: (value, record) =>
-				record.transactionType.indexOf(value) === 0,
-			render: (transactionType) => (
-				<Tag color={transactionType === "debit" ? "red" : "green"}>
-					{transactionType.toUpperCase()}
+			onFilter: (value, record) => record.transType.indexOf(value) === 0,
+			render: (transType) => (
+				<Tag color={transType === "sell" ? "red" : "green"}>
+					{transType.toUpperCase()}
 				</Tag>
 			),
 			width: 70,
 		},
 		{
 			title: "Time of Transaction",
-			dataIndex: "transactionTime",
-			key: "transactionTime",
+			dataIndex: "transTime",
+			key: "transTime",
 			filterDropdown: ({
 				setSelectedKeys,
 				selectedKeys,
@@ -89,19 +99,18 @@ function Transactions() {
 			onFilter: (value, record) => {
 				const startDate = value[0].startOf("day").toDate();
 				const endDate = value[1].endOf("day").toDate();
-				const transactionDate = new Date(record.transactionTime);
+				const transactionDate = new Date(record.transTime);
 				return (
 					transactionDate >= startDate && transactionDate <= endDate
 				);
 			},
-			sorter: (a, b) =>
-				new Date(a.transactionTime) - new Date(b.transactionTime),
-			render: (transactionTime) => (
+			sorter: (a, b) => new Date(a.transTime) - new Date(b.transTime),
+			render: (transTime) => (
 				<span>
 					{moment
-						.utc(transactionTime)
+						.utc(transTime)
 						.utcOffset(7)
-						.format("DD/MM/YYYY HH:mm:ss")}
+						.format("HH:mm:ss DD/MM/YYYY")}
 				</span>
 			),
 		},
@@ -116,17 +125,26 @@ function Transactions() {
 	// Replace with your actual data
 	const [data, setData] = useState([]);
 	useEffect(() => {
-		setData(
-			Array.from({ length: 100 }, (_, i) => ({
-				key: i + 1,
-				id: new Date().getTime() + i,
-				username: `userabcxyz${i}`,
-				coin: coins[(Math.random() * coins.length) | 0],
-				amount: (Math.random() * 10).toFixed(2),
-				transactionType: i % 2 === 0 ? "debit" : "credit",
-				transactionTime: moment().subtract(i, "days").toISOString(),
-			}))
-		);
+		axios
+			.get("https://api.trademarkk.com.vn/api/transactions")
+			.then((res) => {
+				if (res.data.success) {
+					setData(res.data.transactions);
+				} else {
+					console.log("Error: ", res.data.message);
+				}
+			});
+		// setData(
+		// 	Array.from({ length: 100 }, (_, i) => ({
+		// 		key: i + 1,
+		// 		id: new Date().getTime() + i,
+		// 		username: `userabcxyz${i}`,
+		// 		coin: coins[(Math.random() * coins.length) | 0],
+		// 		amount: (Math.random() * 10).toFixed(2),
+		// 		transactionType: i % 2 === 0 ? "debit" : "credit",
+		// 		transTime: moment().subtract(i, "days").toISOString(),
+		// 	}))
+		// );
 	}, []);
 	const [filteredData, setFilteredData] = useState([]);
 	useEffect(() => {

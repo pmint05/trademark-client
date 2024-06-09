@@ -17,8 +17,9 @@ import { Avatar, Button, Dropdown, Layout, Menu, Space, theme } from "antd";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 const { Header, Sider, Content, Footer } = Layout;
-
+import { useAuth } from "../../context/AuthContext";
 function Sidebar({ children }) {
+	const { user, logout } = useAuth();
 	const menuItems = [
 		{
 			key: 1,
@@ -53,7 +54,7 @@ function Sidebar({ children }) {
 	];
 	const adminMenu = [
 		{
-			label: "Profile",
+			label: <Link to="/profile">Profile</Link>,
 			key: "0",
 		},
 		{
@@ -64,7 +65,7 @@ function Sidebar({ children }) {
 			type: "divider",
 		},
 		{
-			label: "Logout",
+			label: <button onClick={logout}>Logout</button>,
 			key: "3",
 		},
 	];

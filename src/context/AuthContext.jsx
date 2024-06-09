@@ -11,6 +11,7 @@ export const AuthProvider = ({ children }) => {
 		if (token) {
 			try {
 				const decodedToken = jwtDecode(token);
+				console.log(decodedToken);
 				setUser(decodedToken);
 				axios.defaults.headers.common[
 					"Authorization"
@@ -27,16 +28,12 @@ export const AuthProvider = ({ children }) => {
 	}, [token]);
 
 	const login = (userData) => {
-		console.log(userData);
 		setUser(userData);
-		userData.token =
-			"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwicm9sZXMiOlsidXNlciJdfQ.uM5Q8zppG9tqo0bL2KFHhuw5wnqOwjvbrsRjrbjqgiE";
 		localStorage.setItem("token", userData.token);
 		setToken(userData.token);
 	};
 
 	const register = (userData) => {
-		console.log(userData);
 		setUser(userData);
 		localStorage.setItem("token", userData.token);
 		setToken(userData.token);

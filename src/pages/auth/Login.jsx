@@ -6,23 +6,39 @@ import {
 import { Button, Checkbox, ConfigProvider, Form, Input } from "antd";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import axios from "axios";
 function Login() {
 	const { user, login } = useAuth();
 	const navigate = useNavigate();
 	const location = useLocation();
 	const { from } = location.state || { from: { pathname: "/" } };
 
-	const onFinish = (values) => {
-		console.log("Success:", values);
-		login(values);
-
-		// Navigate the user or admin to the fallback URL
-		if (user && user.role === "admin") {
-			navigate("/admin/dashboard");
-		} else {
-			navigate(from);
+	const onFinish = async (values) => {
+		try {
+			const response = await axios.post(
+				"https://api.trademarkk.com.vn/api/login",
+				values
+			);
+			const { success, roles, token, message } = response.data;
+			if (success) {
+				values.token = token;
+				values.roles = roles;
+				login(values);
+				if (roles.includes("admin")) {
+					navigate("/admin/dashboard");
+				} else {
+					console.log(message);
+					navigate(from);
+				}
+			} else {
+				console.error(message); // Handle error messages appropriately
+			}
+		} catch (error) {
+			console.error("Error logging in:", error);
+			// Handle error cases, such as network errors
 		}
 	};
+
 	const onFinishFailed = (errorInfo) => {
 		console.log("Failed:", errorInfo);
 	};

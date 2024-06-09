@@ -11,17 +11,20 @@ import {
 	Slider,
 	InputNumber,
 	Row,
+	Empty,
+	message,
 } from "antd";
 import { useAuth } from "../../context/AuthContext";
-import { Cryptocon } from "cryptocons";
 import axios from "axios";
-import { render } from "react-dom";
+import formatLongNum from "../../helper/formatLongNum";
+
 const Profile = () => {
 	const { user, logout } = useAuth();
+	const [userInfo, setUserInfo] = useState({});
 	const [editMode, setEditMode] = useState(false);
 	const [currentMarket, setCurrentMarket] = useState([]);
 	const [availableBank, setAvailableBank] = useState([]);
-
+	const [walletData, setWalletData] = useState([]);
 	useEffect(() => {
 		axios
 			.get(
@@ -33,61 +36,78 @@ const Profile = () => {
 		axios.get("https://api.vietqr.io/v2/banks").then((res) => {
 			setAvailableBank(res.data.data);
 		});
+		axios.get("https://api.trademarkk.com.vn/api/users").then((res) => {
+			const _info = res.data.find(
+				(item) => item.username === user.username
+			);
+			setUserInfo(_info);
+		});
 	}, []);
 
 	const [form] = Form.useForm();
 
 	const handleEdit = () => {
 		form.setFieldsValue({
-			fullName: user.fullName,
-			bankNumber: user.bankNumber,
-			bankAccount: user.bankAccount,
-			email: user.email,
+			fullName: userInfo.fullName,
+			bankName: userInfo.bankName,
+			bankNumber: userInfo.bankNumber,
+			email: userInfo.email,
 		});
 		setEditMode(true);
 	};
 
 	const handleSave = () => {
-		// Call API to update user details
-		// ...
-
-		setEditMode(false);
+		const values = form.getFieldsValue();
+		try {
+			axios
+				.post(
+					"https://api.trademarkk.com.vn/api/user/info/update",
+					values
+				)
+				.then((res) => {
+					if (res.data.success) {
+						message.success("Update successfully!");
+						setUserInfo(values);
+					} else {
+						message.error("Update failed!");
+					}
+					setEditMode(false);
+				});
+		} catch (e) {
+			message.error("Update failed!");
+			console.error("Error: ", e);
+		}
 	};
-	const walletData = [
-		{
-			key: "1",
-			coinIcon: "BitcoinBadge",
-			coinCode: "BTC",
-			balance: 0.5,
-		},
-		{
-			key: "2",
-			coinIcon: "EthereumBadge",
-			coinCode: "ETH",
-			balance: 2.3,
-		},
-		{
-			key: "3",
-			coinIcon: "LitecoinBadge",
-			coinCode: "LTC",
-			balance: 5.1,
-		},
-	];
-
+	const [wallet, setWallet] = useState({});
+	useEffect(() => {
+		axios
+			.get(`https://api.trademarkk.com.vn/api/wallet/${user.username}`)
+			.then((res) => {
+				setWallet(res.data.wallet);
+				setWalletData(res.data.wallet.coins);
+			});
+	}, []);
+	const [coinPricesInVND, setCoinPricesInVND] = useState({});
+	useEffect(() => {
+		const fetchCoinPrices = async () => {
+			const coinPrices = {};
+			for (const coin of walletData) {
+				const res = await axios.get(
+					`https://api.coinbase.com/v2/exchange-rates?currency=${coin.code}`
+				);
+				coinPrices[coin.code] = res.data.data.rates.VND;
+			}
+			setCoinPricesInVND(coinPrices);
+		};
+		fetchCoinPrices();
+	}, [walletData]);
 	const columns = [
 		{
 			title: "Coin Code",
-			dataIndex: "coinCode",
-			key: "coinCode",
+			dataIndex: "code",
+			key: "code",
 			render: (text, record) => (
-				<span className="flex items-center gap-2">
-					<Cryptocon
-						icon={record.coinIcon}
-						badgeRadius={999}
-						size={24}
-					/>
-					{text}
-				</span>
+				<span className="flex items-center gap-2">{text}</span>
 			),
 		},
 		{
@@ -97,15 +117,15 @@ const Profile = () => {
 			render: (text, record) => (
 				<span>
 					{text} (
-					{(
-						currentMarket?.find(
-							(market) =>
-								market.symbol == record.coinCode.toLowerCase()
-						)?.current_price * parseFloat(text)
-					).toLocaleString("vi-VN", {
-						style: "currency",
-						currency: "VND",
-					})}
+					{(coinPricesInVND[record.code] &&
+						(coinPricesInVND[record.code] * text).toLocaleString(
+							"vi-VN",
+							{
+								style: "currency",
+								currency: "VND",
+							}
+						)) ||
+						0}
 					)
 				</span>
 			),
@@ -159,39 +179,55 @@ const Profile = () => {
 		>
 			<div className="mt-20 flex items-center justify-center flex-col">
 				<h1 className="font-bold text-2xl text-white mb-4">Wallet</h1>
-				<Table
-					dataSource={walletData}
-					columns={columns}
-					bordered
-					pagination={false}
-					summary={() => {
-						let totalBalance = 0;
-						walletData.forEach((item) => {
-							totalBalance +=
-								currentMarket?.find(
-									(market) =>
-										market.symbol ==
-										item.coinCode.toLowerCase()
-								)?.current_price * item.balance;
-						});
-						return (
-							<Table.Summary.Row>
-								<Table.Summary.Cell>
-									Total (VND)
-								</Table.Summary.Cell>
-								<Table.Summary.Cell colSpan={2}>
-									{totalBalance &&
-										(totalBalance.toLocaleString("vi-VN", {
-											style: "currency",
-											currency: "VND",
-										}) ||
-											0)}
-								</Table.Summary.Cell>
-							</Table.Summary.Row>
-						);
-					}}
-				/>
-				<div className="flex gap-2 mt-4 min-w-64">
+				{walletData ? (
+					<Table
+						dataSource={walletData}
+						columns={columns}
+						bordered
+						pagination={false}
+						summary={() => {
+							let totalBalance = 0;
+							walletData.forEach((coin) => {
+								totalBalance +=
+									currentMarket?.find(
+										(market) =>
+											market.symbol ==
+											coin.code.toLowerCase()
+									)?.current_price * coin.balance;
+							});
+							return (
+								<Table.Summary.Row>
+									<Table.Summary.Cell>
+										Total (VND)
+									</Table.Summary.Cell>
+									<Table.Summary.Cell colSpan={2}>
+										{totalBalance &&
+											(totalBalance.toLocaleString(
+												"vi-VN",
+												{
+													style: "currency",
+													currency: "VND",
+												}
+											) ||
+												0)}
+									</Table.Summary.Cell>
+								</Table.Summary.Row>
+							);
+						}}
+					/>
+				) : (
+					<Empty description="No data" />
+				)}
+				{wallet && (
+					<div className="text-white flex items-center gap-2 mt-4 px-4 py-2 border min-w-60">
+						<h1>Balance</h1>
+						<b>
+							{wallet.balance && formatLongNum(wallet.balance)}{" "}
+							VNĐ
+						</b>
+					</div>
+				)}
+				<div className="flex gap-2 mt-4 min-w-60">
 					<Button
 						type="primary"
 						block
@@ -199,13 +235,15 @@ const Profile = () => {
 					>
 						Deposit
 					</Button>
-					<Button
-						type="primary"
-						block
-						onClick={handleShowWithdrawModal}
-					>
-						Withdraw
-					</Button>
+					{walletData && (
+						<Button
+							type="primary"
+							block
+							onClick={handleShowWithdrawModal}
+						>
+							Withdraw
+						</Button>
+					)}
 				</div>
 			</div>
 			<DepositModal
@@ -215,6 +253,7 @@ const Profile = () => {
 			<WithdrawModal
 				open={showWithdrawModal}
 				onCancel={() => setShowWithdrawModal(false)}
+				userInfo={userInfo}
 			/>
 			<div className="mt-10 flex items-center justify-center flex-col">
 				<h1 className="text-2xl font-bold text-white mb-4">Profile</h1>
@@ -223,7 +262,7 @@ const Profile = () => {
 						form={form}
 						onFinish={handleSave}
 						layout="vertical"
-						initialValues={user}
+						initialValues={userInfo}
 					>
 						<Form.Item
 							name="name"
@@ -259,12 +298,12 @@ const Profile = () => {
 							</Select>
 						</Form.Item>
 						<Form.Item
-							name="bankAccount"
-							label="Bank Account"
+							name="bankNumber"
+							label="Bank Number"
 							rules={[
 								{
 									required: true,
-									message: "Please input your bank account!",
+									message: "Please input your bank number!",
 								},
 							]}
 						>
@@ -300,18 +339,34 @@ const Profile = () => {
 					</Form>
 				) : (
 					<div className="text-white p-4 border rounded-md">
-						<p>Full Name: {user.name}</p>
-						<p>Bank Name: {user.bankNumber}</p>
-						<p>Bank Account: {user.bankAccount}</p>
-						<p>Email: {user.email}</p>
-						<Button
-							onClick={handleEdit}
-							block
-							className="mt-4"
-							type="dashed"
-						>
-							Edit
-						</Button>
+						{userInfo && (
+							<>
+								<div className="flex gap-2 justify-between items-center">
+									<p>Full Name:</p>
+									<b>{userInfo.name}</b>
+								</div>
+								<div className="flex gap-2 justify-between items-center">
+									<p>Bank Name:</p>
+									<b>{userInfo.bankName}</b>
+								</div>
+								<div className="flex gap-2 justify-between items-center">
+									<p>Bank Account:</p>
+									<b>{userInfo.bankNumber}</b>
+								</div>
+								<div className="flex gap-2 justify-between items-center">
+									<p>Email:</p>
+									<b>{userInfo.email}</b>
+								</div>
+								<Button
+									onClick={handleEdit}
+									block
+									className="mt-4"
+									type="dashed"
+								>
+									Edit
+								</Button>
+							</>
+						)}
 					</div>
 				)}
 				<Button onClick={logout} danger type="text" className="mt-4">
@@ -324,33 +379,41 @@ const Profile = () => {
 const DepositModal = ({ open, onCancel }) => {
 	const { user } = useAuth();
 	const [payGate, setPayGate] = useState([]);
+	const [userInfo, setUserInfo] = useState({});
 	const [form] = Form.useForm();
 	useEffect(() => {
 		setPayGate([
 			{
 				id: 1,
 				bankName: "Vietcombank",
-				bankAccount: "0123456789",
+				bankNumber: "0123456789",
 			},
 			{
 				id: 2,
 				bankName: "Techcombank",
-				bankAccount: "9876543210",
+				bankNumber: "9876543210",
 			},
 		]);
 	}, []);
+	useEffect(() => {
+		axios.get("https://api.trademarkk.com.vn/api/users").then((res) => {
+			const _info = res.data.find(
+				(item) => item.username === user.username
+			);
+			setUserInfo(_info);
+		});
+	}, [user]);
+
 	const [qrCode, setQrCode] = useState({});
 	const [qrVisible, setQrVisible] = useState(false);
 	const generateQRCode = async () => {
 		const isValid = await form.validateFields();
 		if (!isValid) return alert("Please select a bank!");
-		const { bankName, bankAccount } = JSON.parse(
-			form.getFieldValue("bank")
-		);
-		const vietQRImg = `https://img.vietqr.io/image/${bankName}-${bankAccount}-compact.png?addInfo=`;
+		const { bankName, bankNumber } = JSON.parse(form.getFieldValue("bank"));
+		const vietQRImg = `https://img.vietqr.io/image/${bankName}-${bankNumber}-compact.png?addInfo=`;
 		setQrCode({
 			img: vietQRImg,
-			content: `${user.name} - ${String(Date.now()).slice(-6)}`,
+			content: `${userInfo.username} - ${String(Date.now()).slice(-6)}`,
 		});
 		setQrVisible(true);
 	};
@@ -359,7 +422,13 @@ const DepositModal = ({ open, onCancel }) => {
 		alert("Copied!");
 	};
 	return (
-		<Modal open={open} title="Deposit" footer={null} onCancel={onCancel}>
+		<Modal
+			open={open}
+			title="Deposit"
+			footer={null}
+			onCancel={onCancel}
+			onOk={onCancel}
+		>
 			<Form form={form} layout="vertical">
 				<Form.Item
 					name="bank"
@@ -377,10 +446,10 @@ const DepositModal = ({ open, onCancel }) => {
 								key={bank.id}
 								value={JSON.stringify({
 									bankName: bank.bankName,
-									bankAccount: bank.bankAccount,
+									bankNumber: bank.bankNumber,
 								})}
 							>
-								{bank.bankName} - {bank.bankAccount}
+								{bank.bankName} - {bank.bankNumber}
 							</Select.Option>
 						))}
 					</Select>
@@ -420,56 +489,34 @@ const DepositModal = ({ open, onCancel }) => {
 		</Modal>
 	);
 };
-const WithdrawModal = ({ open, onCancel }) => {
-	const { user } = useAuth();
+const WithdrawModal = ({ open, onCancel, userInfo }) => {
+	const MIN_AMOUNT = 100000;
 	const [form] = Form.useForm();
-	const [currentCoinPrice, setCurrentCoinPrice] = useState([]);
 	const [max, setMax] = useState(0);
-	const [inputValue, setInputValue] = useState(100000);
-	const onChange = (newValue) => {
-		setInputValue(newValue);
-	};
+	const [inputValue, setInputValue] = useState(MIN_AMOUNT);
 	const handleWithdraw = async () => {
-		const isValid = await form.validateFields();
-		if (!isValid) return alert("Please fill in all required fields!");
-		// Call API to withdraw
-		// ...
-		alert("Withdraw successfully!");
-		onCancel();
+		try {
+			const values = await form.validateFields();
+			console.log(values);
+			// Call API to withdraw
+			// ...
+			form.resetFields();
+			alert("Withdraw successfully!");
+			onCancel();
+		} catch (errorInfo) {
+			console.log("Failed:", errorInfo);
+		}
 	};
-	const walletData = [
-		{
-			key: "1",
-			coinIcon: "BitcoinBadge",
-			coinCode: "BTC",
-			balance: 0.5,
-		},
-		{
-			key: "2",
-			coinIcon: "EthereumBadge",
-			coinCode: "ETH",
-			balance: 2.3,
-		},
-		{
-			key: "3",
-			coinIcon: "LitecoinBadge",
-			coinCode: "LTC",
-			balance: 5.1,
-		},
-	];
+	const [walletData, setWalletData] = useState({});
 	useEffect(() => {
-		const fetchBalances = async () => {
-			let totalBalance = 0;
-			for (const item of walletData) {
-				const res = await axios.get(
-					`https://api.coinbase.com/v2/exchange-rates?currency=${item.coinCode}`
-				);
-				totalBalance += res.data.data.rates.VND * item.balance;
-			}
-			setMax(totalBalance);
-		};
-
-		fetchBalances();
+		axios
+			.get(
+				`https://api.trademarkk.com.vn/api/wallet/${userInfo.username}`
+			)
+			.then((res) => {
+				setWalletData(res.data.wallet);
+				setMax(res.data.wallet.balance);
+			});
 	}, [open]);
 	return (
 		<ConfigProvider
@@ -488,6 +535,11 @@ const WithdrawModal = ({ open, onCancel }) => {
 						colorBgContainer: "transparent",
 						colorIcon: "#ddd",
 					},
+					Button: {
+						colorText: "white",
+						colorBgContainer: "transparent",
+						colorBg: "#123",
+					},
 				},
 			}}
 		>
@@ -501,8 +553,11 @@ const WithdrawModal = ({ open, onCancel }) => {
 					form={form}
 					layout="vertical"
 					initialValues={{
-						bank: `${user.bankName} - ${user.bankAccount}`,
+						bank: userInfo
+							? `${userInfo.bankName} - ${userInfo.bankNumber}`
+							: "",
 					}}
+					onFinish={handleWithdraw}
 				>
 					<Form.Item
 						name="amount"
@@ -512,49 +567,47 @@ const WithdrawModal = ({ open, onCancel }) => {
 								required: true,
 								message: "Please input the amount!",
 							},
+							({ getFieldValue }) => ({
+								validator(_, value) {
+									if (
+										!value ||
+										(value >= MIN_AMOUNT && value <= max)
+									) {
+										return Promise.resolve();
+									}
+									if (value < MIN_AMOUNT) {
+										return Promise.reject(
+											new Error(
+												"Minimum amount is 100,000 VND!"
+											)
+										);
+									}
+									if (value > max) {
+										return Promise.reject(
+											new Error("Insufficient balance!")
+										);
+									}
+								},
+							}),
 						]}
 					>
-						<Row>
-							<Col span={12}>
-								<Slider
-									min={100000}
-									max={max}
-									onChange={onChange}
-									value={
-										typeof inputValue === "number"
-											? inputValue
-											: 0
-									}
-									tooltip={{
-										visible: true,
-										placement: "top",
-										formatter: (value) =>
-											value.toLocaleString("vi-VN", {
-												style: "currency",
-												currency: "VND",
-											}),
-									}}
-								/>
-							</Col>
-							<Col span={12}>
-								<InputNumber
-									min={100000}
-									max={max}
-									style={{
-										margin: "0 16px",
-									}}
-									value={inputValue}
-									onChange={onChange}
-									addonAfter="VND"
-									formatter={(value) =>
-										`${value}`.replace(
-											/\B(?=(\d{3})+(?!\d))/g,
-											","
-										)
-									}
-								/>
-							</Col>
-						</Row>
+						<div className="flex items-center gap-2">
+							<InputNumber
+								min={MIN_AMOUNT}
+								max={max}
+								value={inputValue}
+								addonAfter="VND"
+							/>
+							<Button
+								onClick={() => {
+									form.setFieldsValue({ amount: max });
+									form.validateFields(["amount"]);
+								}}
+								type="dashed"
+							>
+								Max
+							</Button>
+						</div>
 					</Form.Item>
 					<Form.Item
 						name="bank"
@@ -569,11 +622,7 @@ const WithdrawModal = ({ open, onCancel }) => {
 						<Input disabled />
 					</Form.Item>
 					<Form.Item>
-						<Button
-							onClick={handleWithdraw}
-							type="primary"
-							htmlType="submit"
-						>
+						<Button type="primary" htmlType="submit">
 							Withdraw
 						</Button>
 					</Form.Item>
