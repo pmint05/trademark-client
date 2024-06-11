@@ -43,16 +43,20 @@ function Login() {
 		console.log("Failed:", errorInfo);
 	};
 	return (
-		<div className="h-screen flex items-center justify-center flex-col text-gray-200">
-			<div className="fixed top-4 left-4">
+		<div className="min-h-screen flex items-center justify-center flex-col text-gray-200">
+			<div className="fixed top-0 left-0 bg-slate-800 w-full p-4 drop-shadow-md">
 				<Link to="/" className="flex items-center gap-2">
 					<ArrowLeftOutlined className="text-2xl" /> Quay lại trang
 					chủ
 				</Link>
 			</div>
-			<header>
+			<header className="mt-20">
 				<center>
-					<h1 className="font-black text-4xl">Logo</h1>
+					<img
+						src="/image/logo-light.png"
+						alt="logo"
+						className="h-12 mb-4"
+					/>
 					<p>Đăng nhập tài khoản TradeMark</p>
 				</center>
 			</header>

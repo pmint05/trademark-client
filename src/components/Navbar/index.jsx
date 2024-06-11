@@ -80,11 +80,12 @@ function Navbar() {
 		>
 			<div className="w-full flex justify-between lg:max-w-4xl xl:max-w-6xl">
 				<div className="logo">
-					<Link
-						to="/"
-						className="font-bold text-xl uppercase px-2 lg:px-0"
-					>
-						Logo
+					<Link to="/">
+						<img
+							src="/image/logo-light.png"
+							alt="logo"
+							className="w-16"
+						/>
 					</Link>
 				</div>
 				{/* MOBILE NAV */}

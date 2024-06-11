@@ -37,7 +37,12 @@ function Footer() {
 		<footer className="mt-20 bg-slate-900 text-gray-400">
 			<div className="flex flex-col md:flex-row md:items-start md:p-8 lg:px-20">
 				<div className="text-gray-300 text-center p-4 md:text-justify md:max-w-sm lg:max-w-2xl">
-					<h1 className="logo text-xl font-bold">LOGO</h1>
+					{/* <h1 className="logo text-xl font-bold">LOGO</h1> */}
+					<img
+						src="/image/logo-light.png"
+						alt="logo"
+						className="w-20"
+					/>
 					<p>
 						TradeMark là một sàn giao dịch tiền điện tử hàng đầu thế
 						giới, cung cấp dịch vụ mua bán tiền điện tử, giao dịch

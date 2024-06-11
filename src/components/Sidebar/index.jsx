@@ -141,8 +141,16 @@ function Sidebar({ children }) {
 								collapsed ? "opacity-100" : "opacity-0"
 							} transition-opacity ml-2 text-nowrap`}
 						>
-							<Link to="/admin" className="font-bold text-md">
-								Admin | Logo
+							<Link
+								to="/admin"
+								className="font-bold text-md flex items-center"
+							>
+								<img
+									src="/image/logo-dark.png"
+									alt="logo"
+									className="w-10 mr-2"
+								/>
+								| Admin
 							</Link>
 						</h1>
 					</div>
