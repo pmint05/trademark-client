@@ -7,7 +7,6 @@ import {
 	Button,
 	Select,
 	Input,
-	Tag,
 	Drawer,
 	Space,
 	Form,
@@ -16,7 +15,6 @@ import {
 import axios from "axios";
 import {
 	DeleteOutlined,
-	EditOutlined,
 	MinusCircleOutlined,
 	PlusOutlined,
 } from "@ant-design/icons";
@@ -51,40 +49,12 @@ function Users() {
 						return u;
 					})
 				);
-				console.log(_users);
+				// console.log(_users);
 				setUsers(_users);
 			})
 			.catch((error) => {
 				console.error("Error fetching users", error);
 			});
-		// setUsers(
-		// 	Array.from({ length: userLength }, (_, index) => ({
-		// 		id: index + 1,
-		// 		order: index + 1,
-		// 		username: `userabcxyz${index}`,
-		// 		name: `User ${index + 1}`,
-		// 		email: `user${index + 1}@gmai.com`,
-		// 		bankName: "Vietcombank",
-		// 		bankNumber: "0123456789",
-		// 		wallet: {
-		// 			coins: [
-		// 				{
-		// 					code: "BTC",
-		// 					balance: 0.0001,
-		// 				},
-		// 				{
-		// 					code: "ETH",
-		// 					balance: 0.001,
-		// 				},
-		// 				{
-		// 					code: "USDT",
-		// 					balance: 1,
-		// 				},
-		// 			],
-		// 			balance: Math.floor(Math.random() * 100000),
-		// 		},
-		// 	}))
-		// );
 	}, []);
 	const [open, setOpen] = useState(false);
 	const [initialValues, setInitialValues] = useState({});
