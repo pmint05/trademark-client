@@ -65,8 +65,8 @@ function Footer() {
 					</Link>
 					. All rights reserved. <br />
 					Designed and developed by{" "}
-					<a href="https://t.me/pmint05" target="_blank">
-						@pmint05
+					<a href="https://trademarkk.com.vn" target="_blank">
+						TradeMarkk
 					</a>
 				</p>
 			</div>
