@@ -381,20 +381,22 @@ const DepositModal = ({ open, onCancel }) => {
 	const [payGate, setPayGate] = useState([]);
 	const [userInfo, setUserInfo] = useState({});
 	const [form] = Form.useForm();
-	useEffect(() => {
-		setPayGate([
-			{
-				id: 1,
-				bankName: "Vietcombank",
-				bankNumber: "0123456789",
-			},
-			{
-				id: 2,
-				bankName: "Techcombank",
-				bankNumber: "9876543210",
-			},
-		]);
-	}, []);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await axios.get("https://api.trademarkk.com.vn/api/admin/bank");
+        setPayGate(response.data.map(item => ({
+          id: item._id,
+          bankName: item.name,
+          bankNumber: item.account
+        })));
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
 	useEffect(() => {
 		axios.get("https://api.trademarkk.com.vn/api/users").then((res) => {
 			const _info = res.data.find(

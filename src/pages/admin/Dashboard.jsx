@@ -1,7 +1,26 @@
 import { DollarOutlined, UserOutlined } from "@ant-design/icons";
 import { Card, Col, Row, Statistic, Table } from "antd";
 import { PieChart } from "../../components/Charts";
+
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 function Dashboard() {
+	const [userCount, setUserCount] = useState(0);
+
+	useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get("https://api.trademarkk.com.vn/api/users");
+        const filteredUsers = response.data.filter(user => user.roles.includes("user"));
+        setUserCount(filteredUsers.length);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
 	const topUsers = [
 		{
 			key: 1,
@@ -51,7 +70,7 @@ function Dashboard() {
 					<Card className="truncate">
 						<Statistic
 							title="Người dùng"
-							value={12345}
+							value={userCount}
 							prefix={<UserOutlined />}
 						/>
 					</Card>

@@ -31,11 +31,11 @@ function Sidebar({ children }) {
 			label: <Link to="/admin/transactions">Quản lý đơn hàng</Link>,
 			icon: <InboxOutlined />,
 		},
-		{
-			key: 3,
-			label: <Link to="/admin/currencies">Quản lý tiền tệ</Link>,
-			icon: <TransactionOutlined />,
-		},
+		// {
+		// 	key: 3,
+		// 	label: <Link to="/admin/currencies">Quản lý tiền tệ</Link>,
+		// 	icon: <TransactionOutlined />,
+		// },
 		{
 			key: 4,
 			label: <Link to="/admin/users">Quản lý người dùng</Link>,
@@ -46,11 +46,11 @@ function Sidebar({ children }) {
 			label: <Link to="/admin/payment-gateways">Cổng thanh toán</Link>,
 			icon: <CreditCardOutlined />,
 		},
-		{
-			key: 6,
-			label: <Link to="/admin/deposits">Chuyển tiền</Link>,
-			icon: <DollarCircleOutlined />,
-		},
+		// {
+		// 	key: 6,
+		// 	label: <Link to="/admin/deposits">Chuyển tiền</Link>,
+		// 	icon: <DollarCircleOutlined />,
+		// },
 	];
 	const adminMenu = [
 		{
